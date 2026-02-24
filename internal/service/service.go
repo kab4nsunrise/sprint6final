@@ -15,7 +15,6 @@ var morseSymbols = map[rune]bool{
 	'/': true,
 }
 
-
 func DetectAndConvert(input string) (string, error) {
 	
 	input = strings.TrimSpace(input)
@@ -24,6 +23,7 @@ func DetectAndConvert(input string) (string, error) {
 		return "", nil
 	}
 
+	
 	if IsMorseCode(input) {
 		
 		return morse.ToText(input), nil
@@ -51,6 +51,7 @@ func IsMorseCode(s string) bool {
 	
 	hasMorseSymbols := strings.ContainsAny(s, ".-")
 
+	
 	hasLetters := false
 	for _, r := range s {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
@@ -59,5 +60,6 @@ func IsMorseCode(s string) bool {
 		}
 	}
 
+	
 	return hasMorseSymbols && !hasLetters
 }
