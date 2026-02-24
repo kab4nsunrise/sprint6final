@@ -40,7 +40,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/
+	
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		log.Printf("Ошибка при парсинге формы: %v", err)
@@ -48,7 +48,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	if r.MultipartForm == nil {
 		log.Printf("MultipartForm is nil")
 		http.Error(w, "Ошибка при обработке формы", http.StatusInternalServerError)
