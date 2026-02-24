@@ -9,12 +9,14 @@ import (
 )
 
 
+type Server struct {
 	logger *log.Logger
 	server *http.Server
 }
 
 
 func NewServer(logger *log.Logger) *Server {
+	// Создаем роутер
 	mux := http.NewServeMux()
 
 	
