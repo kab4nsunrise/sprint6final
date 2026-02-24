@@ -1,110 +1,44 @@
-package handlers
+package server
 
 import (
-	"html/template"
-	"io"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
-	"github.com/Yandex-Practicum/go1fl-sprint6-final/internal/service"
+	"github.com/Yandex-Practicum/go1fl-sprint6-final/internal/handlers"
 )
 
 
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	// Проверяем, что это GET запрос
-	if r.Method != http.MethodGet {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
+	logger *log.Logger
+	server *http.Server
+}
+
+
+func NewServer(logger *log.Logger) *Server {
+	mux := http.NewServeMux()
 
 	
-	tmpl, err := template.ParseFiles("index.html")
-	if err != nil {
-		log.Printf("Ошибка при парсинге шаблона: %v", err)
-		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
-		return
+	mux.HandleFunc("/", handlers.HomeHandler)
+	mux.HandleFunc("/upload", handlers.UploadHandler)
+
+	
+	httpServer := &http.Server{
+		Addr:         ":8080",
+		Handler:      mux,
+		ErrorLog:     logger,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  15 * time.Second,
 	}
 
-	err = tmpl.Execute(w, nil)
-	if err != nil {
-		log.Printf("Ошибка при выполнении шаблона: %v", err)
-		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+	return &Server{
+		logger: logger,
+		server: httpServer,
 	}
 }
 
 
-func UploadHandler(w http.ResponseWriter, r *http.Request) {
-	
-	if r.Method != http.MethodPost {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
-
-	
-	err := r.ParseMultipartForm(10 << 20)
-	if err != nil {
-		log.Printf("Ошибка при парсинге формы: %v", err)
-		http.Error(w, "Ошибка при обработке формы", http.StatusInternalServerError)
-		return
-	}
-
-	
-	file, handler, err := r.FormFile("file")
-	if err != nil {
-		log.Printf("Ошибка при получении файла: %v", err)
-		http.Error(w, "Ошибка при получении файла", http.StatusInternalServerError)
-		return
-	}
-	defer file.Close()
-
-	content, err := io.ReadAll(file)
-	if err != nil {
-		log.Printf("Ошибка при чтении файла: %v", err)
-		http.Error(w, "Ошибка при чтении файла", http.StatusInternalServerError)
-		return
-	}
-
-	converted, err := service.DetectAndConvert(string(content))
-	if err != nil {
-		log.Printf("Ошибка при конвертации: %v", err)
-		http.Error(w, "Ошибка при конвертации файла", http.StatusInternalServerError)
-		return
-	}
-
-	
-	timestamp := time.Now().UTC().Format("20060102-150405")
-	ext := filepath.Ext(handler.Filename)
-	if ext == "" {
-		
-		if service.IsMorseCode(string(content)) {
-			ext = ".txt"
-		} else {
-			ext = ".morse"
-		}
-	}
-	newFilename := "converted_" + timestamp + ext
-
-	newFile, err := os.Create(newFilename)
-	if err != nil {
-		log.Printf("Ошибка при создании файла: %v", err)
-		http.Error(w, "Ошибка при создании файла результата", http.StatusInternalServerError)
-		return
-	}
-	defer newFile.Close()
-
-
-	_, err = newFile.WriteString(converted)
-	if err != nil {
-		log.Printf("Ошибка при записи в файл: %v", err)
-		http.Error(w, "Ошибка при записи результата", http.StatusInternalServerError)
-		return
-	}
-
-	
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(converted))
+func (s *Server) Run() error {
+	s.logger.Println("Сервер запущен на порту 8080")
+	return s.server.ListenAndServe()
 }
