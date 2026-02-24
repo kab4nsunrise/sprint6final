@@ -1,4 +1,3 @@
-// internal/handlers/handlers.go
 package handlers
 
 import (
@@ -13,7 +12,7 @@ import (
 	"github.com/Yandex-Practicum/go1fl-sprint6-final/internal/service"
 )
 
-// HomeHandler обрабатывает корневой маршрут и отображает HTML-форму
+
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	// Проверяем, что это GET запрос
 	if r.Method != http.MethodGet {
@@ -21,7 +20,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Парсим и выполняем шаблон
+	
 	tmpl, err := template.ParseFiles("index.html")
 	if err != nil {
 		log.Printf("Ошибка при парсинге шаблона: %v", err)
@@ -36,15 +35,15 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// UploadHandler обрабатывает загрузку файла и его конвертацию
+
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
-	// Проверяем метод запроса
+	
 	if r.Method != http.MethodPost {
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Парсим multipart форму с максимальным размером 10MB
+	
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		log.Printf("Ошибка при парсинге формы: %v", err)
@@ -52,7 +51,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Получаем файл из формы
+	
 	file, handler, err := r.FormFile("file")
 	if err != nil {
 		log.Printf("Ошибка при получении файла: %v", err)
@@ -61,7 +60,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Читаем содержимое файла
 	content, err := io.ReadAll(file)
 	if err != nil {
 		log.Printf("Ошибка при чтении файла: %v", err)
@@ -69,7 +67,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Конвертируем содержимое
 	converted, err := service.DetectAndConvert(string(content))
 	if err != nil {
 		log.Printf("Ошибка при конвертации: %v", err)
@@ -77,11 +74,11 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Создаем имя для нового файла
+	
 	timestamp := time.Now().UTC().Format("20060102-150405")
 	ext := filepath.Ext(handler.Filename)
 	if ext == "" {
-		// Если расширения нет, добавляем .txt для текста или .morse для кода Морзе
+		
 		if service.IsMorseCode(string(content)) {
 			ext = ".txt"
 		} else {
@@ -90,7 +87,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	newFilename := "converted_" + timestamp + ext
 
-	// Создаем новый файл
 	newFile, err := os.Create(newFilename)
 	if err != nil {
 		log.Printf("Ошибка при создании файла: %v", err)
@@ -99,7 +95,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer newFile.Close()
 
-	// Записываем конвертированное содержимое
+
 	_, err = newFile.WriteString(converted)
 	if err != nil {
 		log.Printf("Ошибка при записи в файл: %v", err)
@@ -107,7 +103,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Возвращаем результат
+	
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(converted))
