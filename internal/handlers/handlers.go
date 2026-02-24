@@ -40,6 +40,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	/
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		log.Printf("Ошибка при парсинге формы: %v", err)
@@ -47,14 +48,38 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, handler, err := r.FormFile("file")
-	if err != nil {
-		log.Printf("Ошибка при получении файла: %v", err)
+	
+	if r.MultipartForm == nil {
+		log.Printf("MultipartForm is nil")
+		http.Error(w, "Ошибка при обработке формы", http.StatusInternalServerError)
+		return
+	}
+
+	
+	var keys []string
+	for k := range r.MultipartForm.File {
+		keys = append(keys, k)
+	}
+	log.Printf("Ключи в MultipartForm.File: %v", keys)
+
+	
+	files := r.MultipartForm.File["file"]
+	if len(files) == 0 {
+		log.Printf("Нет файла с именем 'file'")
 		http.Error(w, "Ошибка при получении файла", http.StatusInternalServerError)
+		return
+	}
+
+	fileHeader := files[0]
+	file, err := fileHeader.Open()
+	if err != nil {
+		log.Printf("Ошибка при открытии файла: %v", err)
+		http.Error(w, "Ошибка при открытии файла", http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
 
+	
 	content, err := io.ReadAll(file)
 	if err != nil {
 		log.Printf("Ошибка при чтении файла: %v", err)
@@ -62,6 +87,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	
 	converted, err := service.DetectAndConvert(string(content))
 	if err != nil {
 		log.Printf("Ошибка при конвертации: %v", err)
@@ -69,8 +95,9 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	
 	timestamp := time.Now().UTC().Format("20060102-150405")
-	ext := filepath.Ext(handler.Filename)
+	ext := filepath.Ext(fileHeader.Filename)
 	if ext == "" {
 		if service.IsMorseCode(string(content)) {
 			ext = ".txt"
@@ -80,6 +107,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	newFilename := "converted_" + timestamp + ext
 
+	
 	newFile, err := os.Create(newFilename)
 	if err != nil {
 		log.Printf("Ошибка при создании файла: %v", err)
@@ -95,6 +123,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(converted))
