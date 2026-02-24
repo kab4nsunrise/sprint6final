@@ -1,17 +1,17 @@
 package handlers
 
 import (
-	"html/template"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"path/filepath"
-	"time"
+    "html/template"
+    "io"
+    "log"
+    "net/http"
+    "os"
+    "path/filepath"
+    "time"
 
-	"github.com/Yandex-Practicum/go1fl-sprint6-final/internal/service"
+    "github.com/Yandex-Practicum/go1fl-sprint6-final/internal/service"
+    
 )
-
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	
