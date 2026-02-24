@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"io"
 	"log"
+	"mime/multipart" // добавьте эту строку
 	"net/http"
 	"os"
 	"path/filepath"
@@ -62,9 +63,15 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Ключи в MultipartForm.File: %v", keys)
 
 	
-	files := r.MultipartForm.File["file"]
+	var files []*multipart.FileHeader
+	if f := r.MultipartForm.File["myFile"]; len(f) > 0 {
+		files = f
+	} else {
+		files = r.MultipartForm.File["file"]
+	}
+
 	if len(files) == 0 {
-		log.Printf("Нет файла с именем 'file'")
+		log.Printf("Нет файла с именем 'myFile' или 'file'")
 		http.Error(w, "Ошибка при получении файла", http.StatusInternalServerError)
 		return
 	}
@@ -86,7 +93,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	converted, err := service.DetectAndConvert(string(content))
 	if err != nil {
 		log.Printf("Ошибка при конвертации: %v", err)
